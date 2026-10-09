@@ -1,6 +1,6 @@
 //go:build unix
 
-// Package listener : implémentation TCP IPv4 basée sur les appels système.
+// Package listener: IPv4 TCP implementation built on system calls.
 package listener
 
 import (
@@ -13,20 +13,20 @@ import (
 	"kross/internal/conn"
 )
 
-// Vérifie à la compilation que TcpListener respecte le contrat Listener.
+// Compile-time check that TcpListener satisfies the Listener contract.
 var _ Listener = (*TcpListener)(nil)
 
-// TcpListener ouvre une socket TCP IPv4 avec un backlog maîtrisé.
+// TcpListener opens an IPv4 TCP socket with a controlled backlog.
 type TcpListener struct {
 	host    string
 	port    int
 	backlog int
 
-	fd int          // socket brute, valide entre Bind et Listen
-	ln net.Listener // listener Go, valide après Listen
+	fd int          // raw socket, valid between Bind and Listen
+	ln net.Listener // Go listener, valid after Listen
 }
 
-// NewTcpListener prépare un listener sans ouvrir de socket.
+// NewTcpListener prepares a listener without opening a socket.
 func NewTcpListener(host string, port, backlog int) *TcpListener {
 	return &TcpListener{
 		host:    host,
@@ -36,22 +36,22 @@ func NewTcpListener(host string, port, backlog int) *TcpListener {
 	}
 }
 
-// Bind crée la socket et la lie à l'adresse et au port.
+// Bind creates the socket and binds it to the address and port.
 func (l *TcpListener) Bind() error {
 	ip := net.ParseIP(l.host).To4()
 	if ip == nil {
-		return fmt.Errorf("adresse IPv4 invalide : %q", l.host)
+		return fmt.Errorf("invalid IPv4 address: %q", l.host)
 	}
 
 	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, 0)
 	if err != nil {
-		return fmt.Errorf("socket : %w", err)
+		return fmt.Errorf("socket: %w", err)
 	}
 
-	// Permet de relancer le serveur sans attendre la fin de TIME_WAIT.
+	// Allows restarting the server without waiting for TIME_WAIT to expire.
 	if err := syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
 		syscall.Close(fd)
-		return fmt.Errorf("setsockopt : %w", err)
+		return fmt.Errorf("setsockopt: %w", err)
 	}
 
 	sa := &syscall.SockaddrInet4{Port: l.port}
@@ -59,42 +59,42 @@ func (l *TcpListener) Bind() error {
 
 	if err := syscall.Bind(fd, sa); err != nil {
 		syscall.Close(fd)
-		return fmt.Errorf("bind %s:%d : %w", l.host, l.port, err)
+		return fmt.Errorf("bind %s:%d: %w", l.host, l.port, err)
 	}
 
 	l.fd = fd
 	return nil
 }
 
-// Listen met la socket en écoute avec la taille de file configurée,
-// puis la convertit en net.Listener utilisable par Go.
+// Listen puts the socket in listening mode with the configured queue size,
+// then converts it into a net.Listener usable by Go.
 func (l *TcpListener) Listen() error {
 	if l.fd < 0 {
-		return errors.New("listen appelé avant bind")
+		return errors.New("listen called before bind")
 	}
 
 	if err := syscall.Listen(l.fd, l.backlog); err != nil {
-		return fmt.Errorf("listen : %w", err)
+		return fmt.Errorf("listen: %w", err)
 	}
 
-	// os.NewFile prend possession du descripteur.
+	// os.NewFile takes ownership of the descriptor.
 	f := os.NewFile(uintptr(l.fd), "tcp-listener")
 	l.fd = -1
 
 	ln, err := net.FileListener(f)
-	f.Close() // net.FileListener duplique le descripteur, on peut fermer f
+	f.Close() // net.FileListener duplicates the descriptor, so f can be closed
 	if err != nil {
-		return fmt.Errorf("conversion en net.Listener : %w", err)
+		return fmt.Errorf("convert to net.Listener: %w", err)
 	}
 
 	l.ln = ln
 	return nil
 }
 
-// Accept attend une connexion entrante et l'enveloppe dans une ClientConnection.
+// Accept waits for an incoming connection and wraps it in a ClientConnection.
 func (l *TcpListener) Accept() (*conn.ClientConnection, error) {
 	if l.ln == nil {
-		return nil, errors.New("accept appelé avant listen")
+		return nil, errors.New("accept called before listen")
 	}
 
 	raw, err := l.ln.Accept()
@@ -104,7 +104,7 @@ func (l *TcpListener) Accept() (*conn.ClientConnection, error) {
 	return conn.New(raw), nil
 }
 
-// Close ferme la socket, ce qui débloque Accept avec net.ErrClosed.
+// Close closes the socket, which unblocks Accept with net.ErrClosed.
 func (l *TcpListener) Close() error {
 	if l.ln != nil {
 		return l.ln.Close()
@@ -117,7 +117,7 @@ func (l *TcpListener) Close() error {
 	return nil
 }
 
-// Addr retourne l'adresse réelle, utile quand le port demandé était 0.
+// Addr returns the actual address, useful when the requested port was 0.
 func (l *TcpListener) Addr() net.Addr {
 	if l.ln == nil {
 		return nil
