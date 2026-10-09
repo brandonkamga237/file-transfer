@@ -10,7 +10,7 @@ import (
 	"kross/internal/conn"
 )
 
-// fakeListener remplace TcpListener : aucun port réel n'est ouvert.
+// fakeListener replaces TcpListener: no real port is opened.
 type fakeListener struct {
 	bound    bool
 	listened bool
@@ -55,27 +55,27 @@ func TestStartBindsListensAndStopsCleanly(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- srv.Start() }()
 
-	// Attendre que Listen soit appelé avant d'arrêter.
+	// Wait for Listen to be called before stopping.
 	select {
 	case <-fl.listenedCh:
 	case <-time.After(time.Second):
-		t.Fatal("Listen n'a pas été appelé")
+		t.Fatal("Listen was not called")
 	}
 
 	if err := srv.Stop(); err != nil {
-		t.Fatalf("Stop : %v", err)
+		t.Fatalf("Stop: %v", err)
 	}
 
 	select {
 	case err := <-done:
 		if err != nil {
-			t.Fatalf("Start doit retourner nil après Stop, reçu : %v", err)
+			t.Fatalf("Start must return nil after Stop, got: %v", err)
 		}
 	case <-time.After(time.Second):
-		t.Fatal("Start n'a pas retourné après Stop")
+		t.Fatal("Start did not return after Stop")
 	}
 
 	if !fl.bound || !fl.listened {
-		t.Fatal("Bind et Listen doivent être appelés avant Accept")
+		t.Fatal("Bind and Listen must be called before Accept")
 	}
 }

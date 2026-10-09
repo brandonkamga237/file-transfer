@@ -1,4 +1,4 @@
-// Package server orchestre le cycle de vie du serveur.
+// Package server orchestrates the server lifecycle.
 package server
 
 import (
@@ -11,31 +11,31 @@ import (
 	"kross/internal/listener"
 )
 
-// Server pilote le démarrage, la boucle d'acceptation et l'arrêt.
+// Server drives startup, the accept loop and shutdown.
 type Server struct {
 	cfg      config.ServerConfig
 	listener listener.Listener
 }
 
-// New reçoit la configuration et un listener (injection de dépendance).
+// New receives the configuration and a listener (dependency injection).
 func New(cfg config.ServerConfig, l listener.Listener) *Server {
 	return &Server{cfg: cfg, listener: l}
 }
 
-// Start lie, met en écoute, puis accepte les connexions jusqu'à Stop.
-// Il bloque tant que le serveur tourne.
+// Start binds, listens, then accepts connections until Stop is called.
+// It blocks while the server is running.
 func (s *Server) Start() error {
 	if err := s.listener.Bind(); err != nil {
-		return fmt.Errorf("démarrage : %w", err)
+		return fmt.Errorf("start: %w", err)
 	}
 	if err := s.listener.Listen(); err != nil {
 		s.listener.Close()
-		return fmt.Errorf("démarrage : %w", err)
+		return fmt.Errorf("start: %w", err)
 	}
 	return s.acceptLoop()
 }
 
-// Stop ferme le listener, ce qui arrête la boucle d'acceptation.
+// Stop closes the listener, which ends the accept loop.
 func (s *Server) Stop() error {
 	return s.listener.Close()
 }
@@ -44,18 +44,18 @@ func (s *Server) acceptLoop() error {
 	for {
 		c, err := s.listener.Accept()
 		if err != nil {
-			// Fermeture volontaire : ce n'est pas une erreur.
+			// Intentional shutdown: not an error.
 			if errors.Is(err, net.ErrClosed) {
 				return nil
 			}
-			return fmt.Errorf("accept : %w", err)
+			return fmt.Errorf("accept: %w", err)
 		}
 		s.handle(c)
 	}
 }
 
-// handle traite une connexion. Pour l'instant elle est fermée aussitôt :
-// la lecture de la requête arrivera avec la fonctionnalité 2.
+// handle processes a connection. For now it is closed right away:
+// reading the request will come with HTTP request parsing.
 func (s *Server) handle(c *conn.ClientConnection) {
 	defer c.Close()
 }
