@@ -24,7 +24,6 @@ func main() {
 		log.Fatalf("invalid configuration: %v", err)
 	}
 
-	// Graceful shutdown on Ctrl+C or SIGTERM
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
