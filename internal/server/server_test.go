@@ -10,7 +10,6 @@ import (
 	"kross/internal/conn"
 )
 
-// fakeListener replaces TcpListener: no real port is opened.
 type fakeListener struct {
 	bound    bool
 	listened bool
@@ -55,7 +54,6 @@ func TestStartBindsListensAndStopsCleanly(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- srv.Start() }()
 
-	// Wait for Listen to be called before stopping.
 	select {
 	case <-fl.listenedCh:
 	case <-time.After(time.Second):
