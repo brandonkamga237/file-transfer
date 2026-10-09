@@ -4,8 +4,10 @@
 package listener
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"os"
 	"syscall"
 )
 
@@ -15,7 +17,8 @@ type TcpListener struct {
 	port    int
 	backlog int
 
-	fd int // socket brute, valide entre Bind et Listen
+	fd int          // socket brute, valide entre Bind et Listen
+	ln net.Listener // listener Go, valide après Listen
 }
 
 // NewTcpListener prépare un listener sans ouvrir de socket.
@@ -58,12 +61,48 @@ func (l *TcpListener) Bind() error {
 	return nil
 }
 
-// Close libère la socket si elle a été ouverte.
+// Listen met la socket en écoute avec la taille de file configurée,
+// puis la convertit en net.Listener utilisable par Go.
+func (l *TcpListener) Listen() error {
+	if l.fd < 0 {
+		return errors.New("listen appelé avant bind")
+	}
+
+	if err := syscall.Listen(l.fd, l.backlog); err != nil {
+		return fmt.Errorf("listen : %w", err)
+	}
+
+	// os.NewFile prend possession du descripteur.
+	f := os.NewFile(uintptr(l.fd), "tcp-listener")
+	l.fd = -1
+
+	ln, err := net.FileListener(f)
+	f.Close() // net.FileListener duplique le descripteur, on peut fermer f
+	if err != nil {
+		return fmt.Errorf("conversion en net.Listener : %w", err)
+	}
+
+	l.ln = ln
+	return nil
+}
+
+// Close ferme la socket, ce qui débloque Accept avec net.ErrClosed.
 func (l *TcpListener) Close() error {
+	if l.ln != nil {
+		return l.ln.Close()
+	}
 	if l.fd >= 0 {
 		err := syscall.Close(l.fd)
 		l.fd = -1
 		return err
 	}
 	return nil
+}
+
+// Addr retourne l'adresse réelle, utile quand le port demandé était 0.
+func (l *TcpListener) Addr() net.Addr {
+	if l.ln == nil {
+		return nil
+	}
+	return l.ln.Addr()
 }
