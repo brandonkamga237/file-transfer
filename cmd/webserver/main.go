@@ -15,16 +15,16 @@ import (
 func main() {
 	cfg := config.Default()
 
-	flag.StringVar(&cfg.Host, "host", cfg.Host, "adresse d'écoute")
-	flag.IntVar(&cfg.Port, "port", cfg.Port, "port d'écoute")
-	flag.IntVar(&cfg.Backlog, "backlog", cfg.Backlog, "taille de la file d'attente")
+	flag.StringVar(&cfg.Host, "host", cfg.Host, "listen address")
+	flag.IntVar(&cfg.Port, "port", cfg.Port, "listen port")
+	flag.IntVar(&cfg.Backlog, "backlog", cfg.Backlog, "pending connection queue size")
 	flag.Parse()
 
 	if err := cfg.Validate(); err != nil {
-		log.Fatalf("configuration invalide : %v", err)
+		log.Fatalf("invalid configuration: %v", err)
 	}
 
-	// Arrêt propre sur Ctrl+C ou SIGTERM
+	// Graceful shutdown on Ctrl+C or SIGTERM
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -34,13 +34,13 @@ func main() {
 	go func() {
 		<-ctx.Done()
 		if err := srv.Stop(); err != nil {
-			log.Printf("erreur à l'arrêt : %v", err)
+			log.Printf("shutdown error: %v", err)
 		}
 	}()
 
-	log.Printf("écoute sur %s:%d (backlog %d)", cfg.Host, cfg.Port, cfg.Backlog)
+	log.Printf("listening on %s:%d (backlog %d)", cfg.Host, cfg.Port, cfg.Backlog)
 	if err := srv.Start(); err != nil {
-		log.Fatalf("serveur : %v", err)
+		log.Fatalf("server: %v", err)
 	}
-	log.Println("serveur arrêté")
+	log.Println("server stopped")
 }
