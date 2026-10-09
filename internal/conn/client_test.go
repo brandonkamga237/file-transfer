@@ -7,7 +7,6 @@ import (
 )
 
 func TestReadWrite(t *testing.T) {
-	// net.Pipe simulates a connection without a real network.
 	server, client := net.Pipe()
 	defer client.Close()
 
