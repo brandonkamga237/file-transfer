@@ -3,8 +3,7 @@ package listener
 
 import "kross/internal/conn"
 
-// Listener is the contract used by Server.
-// The backlog is provided when the implementation is constructed.
+// Listener implementations receive the backlog at construction time.
 type Listener interface {
 	Bind() error
 	Listen() error

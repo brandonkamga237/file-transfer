@@ -9,7 +9,7 @@ import (
 )
 
 func TestTcpListenerAcceptsConnection(t *testing.T) {
-	// Port 0: the OS picks a free port, so there is no conflict.
+	// Port 0 lets the OS pick a free port.
 	l := NewTcpListener("127.0.0.1", 0, 16)
 
 	if err := l.Bind(); err != nil {
@@ -22,7 +22,6 @@ func TestTcpListenerAcceptsConnection(t *testing.T) {
 
 	addr := l.Addr().String()
 
-	// The connection is queued in the backlog before accept().
 	client, err := net.DialTimeout("tcp", addr, time.Second)
 	if err != nil {
 		t.Fatalf("Dial to %s: %v", addr, err)

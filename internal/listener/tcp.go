@@ -1,6 +1,5 @@
 //go:build unix
 
-// Package listener: IPv4 TCP implementation built on system calls.
 package listener
 
 import (
@@ -13,10 +12,9 @@ import (
 	"kross/internal/conn"
 )
 
-// Compile-time check that TcpListener satisfies the Listener contract.
 var _ Listener = (*TcpListener)(nil)
 
-// TcpListener opens an IPv4 TCP socket with a controlled backlog.
+// TcpListener builds the socket with system calls because net.Listen does not expose the backlog.
 type TcpListener struct {
 	host    string
 	port    int
@@ -26,7 +24,6 @@ type TcpListener struct {
 	ln net.Listener // Go listener, valid after Listen
 }
 
-// NewTcpListener prepares a listener without opening a socket.
 func NewTcpListener(host string, port, backlog int) *TcpListener {
 	return &TcpListener{
 		host:    host,
@@ -36,7 +33,6 @@ func NewTcpListener(host string, port, backlog int) *TcpListener {
 	}
 }
 
-// Bind creates the socket and binds it to the address and port.
 func (l *TcpListener) Bind() error {
 	ip := net.ParseIP(l.host).To4()
 	if ip == nil {
@@ -48,7 +44,7 @@ func (l *TcpListener) Bind() error {
 		return fmt.Errorf("socket: %w", err)
 	}
 
-	// Allows restarting the server without waiting for TIME_WAIT to expire.
+	// Allows restarting without waiting for TIME_WAIT to expire.
 	if err := syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
 		syscall.Close(fd)
 		return fmt.Errorf("setsockopt: %w", err)
@@ -66,8 +62,7 @@ func (l *TcpListener) Bind() error {
 	return nil
 }
 
-// Listen puts the socket in listening mode with the configured queue size,
-// then converts it into a net.Listener usable by Go.
+// Listen starts listening and hands the socket over to a net.Listener.
 func (l *TcpListener) Listen() error {
 	if l.fd < 0 {
 		return errors.New("listen called before bind")
@@ -91,7 +86,6 @@ func (l *TcpListener) Listen() error {
 	return nil
 }
 
-// Accept waits for an incoming connection and wraps it in a ClientConnection.
 func (l *TcpListener) Accept() (*conn.ClientConnection, error) {
 	if l.ln == nil {
 		return nil, errors.New("accept called before listen")
