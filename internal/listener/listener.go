@@ -1,10 +1,10 @@
-// Package listener définit le contrat d'écoute réseau et ses implémentations.
+// Package listener defines the network listening contract and its implementations.
 package listener
 
 import "kross/internal/conn"
 
-// Listener est le contrat utilisé par Server.
-// Le backlog est fourni à la construction de l'implémentation.
+// Listener is the contract used by Server.
+// The backlog is provided when the implementation is constructed.
 type Listener interface {
 	Bind() error
 	Listen() error
