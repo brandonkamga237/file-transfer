@@ -5,14 +5,12 @@ import (
 	"fmt"
 )
 
-// ServerConfig groups the listening settings.
 type ServerConfig struct {
 	Host    string
 	Port    int
 	Backlog int
 }
 
-// Default returns a configuration usable without any file or flag.
 func Default() ServerConfig {
 	return ServerConfig{
 		Host:    "127.0.0.1",
@@ -21,7 +19,6 @@ func Default() ServerConfig {
 	}
 }
 
-// Validate checks that the values are consistent.
 func (c ServerConfig) Validate() error {
 	if c.Port < 0 || c.Port > 65535 {
 		return fmt.Errorf("port out of range: %d", c.Port)
