@@ -7,7 +7,7 @@ import (
 )
 
 func TestReadWrite(t *testing.T) {
-	// net.Pipe simule une connexion sans réseau réel.
+	// net.Pipe simulates a connection without a real network.
 	server, client := net.Pipe()
 	defer client.Close()
 
@@ -16,17 +16,17 @@ func TestReadWrite(t *testing.T) {
 
 	msg := []byte("ping")
 
-	// net.Pipe est synchrone : l'écriture doit se faire dans une goroutine.
+	// net.Pipe is synchronous: the write must happen in a goroutine.
 	go func() {
 		client.Write(msg)
 	}()
 
 	buf := make([]byte, len(msg))
 	if _, err := io.ReadFull(c, buf); err != nil {
-		t.Fatalf("lecture échouée : %v", err)
+		t.Fatalf("read failed: %v", err)
 	}
 	if string(buf) != string(msg) {
-		t.Fatalf("attendu %q, reçu %q", msg, buf)
+		t.Fatalf("expected %q, got %q", msg, buf)
 	}
 }
 
@@ -45,9 +45,9 @@ func TestWriteToClient(t *testing.T) {
 
 	buf := make([]byte, len(msg))
 	if _, err := io.ReadFull(client, buf); err != nil {
-		t.Fatalf("lecture côté client échouée : %v", err)
+		t.Fatalf("client-side read failed: %v", err)
 	}
 	if string(buf) != string(msg) {
-		t.Fatalf("attendu %q, reçu %q", msg, buf)
+		t.Fatalf("expected %q, got %q", msg, buf)
 	}
 }
