@@ -9,7 +9,12 @@ import (
 	"net"
 	"os"
 	"syscall"
+
+	"kross/internal/conn"
 )
+
+// Vérifie à la compilation que TcpListener respecte le contrat Listener.
+var _ Listener = (*TcpListener)(nil)
 
 // TcpListener ouvre une socket TCP IPv4 avec un backlog maîtrisé.
 type TcpListener struct {
@@ -84,6 +89,19 @@ func (l *TcpListener) Listen() error {
 
 	l.ln = ln
 	return nil
+}
+
+// Accept attend une connexion entrante et l'enveloppe dans une ClientConnection.
+func (l *TcpListener) Accept() (*conn.ClientConnection, error) {
+	if l.ln == nil {
+		return nil, errors.New("accept appelé avant listen")
+	}
+
+	raw, err := l.ln.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return conn.New(raw), nil
 }
 
 // Close ferme la socket, ce qui débloque Accept avec net.ErrClosed.
