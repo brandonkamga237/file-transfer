@@ -1,14 +1,12 @@
 # Partie 1 : Kross ouvre la porte
 
-Article publié dans la bibliothèque LesCracks.
+Article publié dans la bibliothèque LesCracks. Titre, description, catégorie, tags et couverture sont dans `meta.json`.
 
-| Champ du studio | Valeur |
-| --- | --- |
-| Titre | Comprendre et construire un serveur web from scratch, partie 1 : Kross ouvre la porte |
-| Description | On construit Kross, un serveur web en Go, en partant des sockets TCP. Première partie : ce qu'est vraiment un serveur, pourquoi Go, et les quatre appels système qui permettent d'accepter une connexion. |
-| Catégorie | Projets from scratch |
-| Tags | Kross, Serveur web, Serveur HTTP, From Scratch, Pas à pas |
-| Couverture | `images/cover.png` |
-| Contenu | `article.md`, collé tel quel dans l'éditeur |
+Pour le publier, depuis la racine du dépôt :
 
-Les figures de l'article pointent vers `raw.githubusercontent.com` : elles ne s'affichent qu'une fois ce dossier poussé sur `master`. Pour ne pas dépendre de GitHub, glisse chaque image de `images/` dans l'éditeur à la place de son lien.
+```bash
+node docs/articles/publish.mjs docs/articles/partie-1            # en brouillon, à relire dans le back office
+node docs/articles/publish.mjs docs/articles/partie-1 --publish  # en ligne
+```
+
+Le script demande l'identifiant et le mot de passe admin, envoie les images sur la plateforme, puis crée l'article, ou le met à jour s'il existe déjà. Il lit le Markdown avec le parseur du studio, dans le dépôt `lescracks-platform` voisin (sinon, indique son chemin avec `LESCRACKS_DIR`).
