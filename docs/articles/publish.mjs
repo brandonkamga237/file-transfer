@@ -2,7 +2,7 @@
 // Publishes an article folder (article.md, meta.json, images/) to the LesCracks library.
 // Usage: node docs/articles/publish.mjs docs/articles/partie-1 [--publish]
 // Without --publish the article is saved as a draft, to review in the back office first.
-// Running it again updates the article with the same title instead of creating a second one.
+// Running it again updates the article (by meta.id, else by title) instead of creating a second one.
 
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -76,8 +76,11 @@ for (const url of images) {
   console.log(`image ${basename(local)} → ${uploaded.url}`);
 }
 
-const existing = (await call(`/resources/admin?${new URLSearchParams({ search: meta.title, kind: 'ARTICLE', size: '50' })}`))
-  .content.find((item) => item.title === meta.title);
+// meta.id pins the article once published, so a later title change updates it instead of duplicating it.
+const existing = meta.id
+  ? { id: meta.id }
+  : (await call(`/resources/admin?${new URLSearchParams({ search: meta.title, kind: 'ARTICLE', size: '50' })}`))
+    .content.find((item) => item.title === meta.title);
 const data = {
   title: meta.title,
   description: meta.description,
